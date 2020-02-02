@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
         else:
             # start the server with the 'run()' method
-            log.info(f'Running on http://{options.ip}:{options.port}')
+            log.info(f'Credshed API running on http://{options.ip}:{options.port}')
             app.api.run(host=options.ip, port=options.port, debug=options.debug)
 
     except (argparse.ArgumentError, AssertionError) as e:

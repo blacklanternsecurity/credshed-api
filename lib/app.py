@@ -167,7 +167,7 @@ def metadata(account_id):
     c = credshed.CredShed()
     account_metadata = c.db.fetch_account_metadata(account_id)
     sources = list(account_metadata)
-    return jsonify([escape(str(s)) for s in sources])
+    return jsonify({int(s.id): escape(str(s)) for s in sources})
 
 
 

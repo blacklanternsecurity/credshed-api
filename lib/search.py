@@ -3,6 +3,7 @@
 # by TheTechromancer
 
 import logging
+from . import util
 from flask import escape
 from datetime import datetime
 from .credshed import CredShed, validation, errors
@@ -80,4 +81,4 @@ def credshed_search_stats(query, limit=10):
 
 def credshed_get_source(source_id):
 
-    return {k: str(v) for k,v in cred_shed.get_source(source_id).to_doc().items()}
+    return util.stringify_json(cred_shed.get_source(source_id).to_doc())
