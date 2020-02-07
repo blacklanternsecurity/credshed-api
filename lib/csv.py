@@ -22,13 +22,14 @@ def iter_csv(accounts):
 
     line = Line()
     writer = csv.writer(line)
-    writer.writerow(['Email', 'Username', 'Password', 'Misc/Description'])
+    writer.writerow(['Email', 'Username', 'Password', 'Hash', 'Misc/Description'])
     yield line.read()
     for account in accounts:
         writer.writerow([f.decode() for f in [
             account.email,
             account.username,
             account.password,
+            account.hash,
             account.misc
         ]])
         yield line.read()
