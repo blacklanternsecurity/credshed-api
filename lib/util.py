@@ -20,3 +20,30 @@ def stringify_json(json):
             new_json[k] = stringify_json(v)
 
     return new_json
+
+
+def get_params(request, required=[], optional=[]):
+    '''
+    Attempts to retrieve JSON values from POST request
+    If required params are missing, returns error message
+    '''
+
+    params = dict()
+
+    try:
+        for param in required:
+            params[param] = request.json[param]
+    except (TypeError, KeyError, AttributeError) as e:
+        if type(e) == KeyError:
+            msg = f'Missing parameter: {e}'
+        else:
+            msg = f'Error in request data: {e}'
+        return {'error': msg}
+
+    for param in optional:
+        try:
+            params[param] = reques.json[param]
+        except (TypeError, KeyError, AttributeError):
+            pass
+
+    return params

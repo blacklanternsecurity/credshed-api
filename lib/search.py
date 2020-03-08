@@ -49,36 +49,3 @@ def credshed_search(query, limit=0):
     }
 
     return json_response
-
-
-def credshed_search_stats(query, limit=10):
-    '''
-    returns (search_report, results)
-    '''
-
-    start_time = datetime.now()
-
-    sources = cred_shed.query_stats(query, limit=limit)
-    resolved_sources = dict()
-    for source_id, count in sources:
-        try:
-            source_name = str(cred_shed.get_source(source_id))
-        except errors.CredShedError as e:
-            log.error(f'Failed to create source: {e}')
-            continue
-        resolved_sources[source_name] = count
-
-    end_time = datetime.now()
-    time_elapsed = (end_time - start_time)
-
-    json_response = {
-        'sources': dict(resolved_sources),
-        'elapsed': f'{time_elapsed.total_seconds():.2f}',
-    }
-
-    return json_response
-
-
-def credshed_get_source(source_id):
-
-    return util.stringify_json(cred_shed.get_source(source_id).to_doc())

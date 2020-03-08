@@ -15,6 +15,7 @@ from .csv import *
 from .search import *
 from . import credshed
 from . import security
+from . import reporting
 
 # flask
 from flask_jwt_extended import (
@@ -29,6 +30,9 @@ from flask import Flask, request, jsonify, escape, Response, stream_with_context
 
 # create the application object
 api = Flask('credshed-api')
+
+# register reporting routes
+api.register_blueprint(reporting.routes.api, url_prefix='/reports')
 
 # secret key
 api.secret_key = security.get_secret_key()
@@ -57,15 +61,10 @@ def search():
     given "query" parameter, returns accounts
     '''
 
-    if request.json:
-        req_json = request.json
-    else:
-        req_json = {}
-
     limit = 1000
 
     try:
-        query = req_json.get('query', '').strip()
+        query = request.form.get('query', '').strip()
         log.info(f'Search query "{query}" by {get_jwt_identity()} from {request.remote_addr}')
         response = jsonify(credshed_search(query, limit=limit))
         response.set_cookie('last_credshed_search', escape(query))
@@ -86,16 +85,11 @@ def search_stats():
     given "query" parameter, returns accounts
     '''
 
-    if request.json:
-        req_json = request.json
-    else:
-        req_json = {}
-
     try:
-        query = req_json.get('query', '').strip()
-        limit = min(1000, int(req_json.get('limit', 10)))
+        query = request.form.get('query', '').strip()
+        limit = min(1000, int(request.form.get('limit', 10)))
         log.info(f'Search stats query "{query}" by {get_jwt_identity()} from {request.remote_addr}')
-        response = jsonify(credshed_search_stats(query, limit=limit))
+        response = jsonify(reporting.json.SearchStatsReport(query, limit=limit))
         return response
 
     except (ValueError, credshed.errors.CredShedError) as e:
@@ -115,7 +109,7 @@ def get_source(source_id):
 
     try:
         log.info(f'Source query "{source_id}" by {get_jwt_identity()} from {request.remote_addr}')
-        response = jsonify(credshed_get_source(source_id))
+        response = jsonify(reporting.json.SourceReport(source_id))
         return response
 
     except credshed.errors.CredShedError as e:
@@ -133,15 +127,10 @@ def count():
     given "query" parameter, returns count
     '''
 
-    if request.json:
-        req_json = request.json
-    else:
-        req_json = {}
-
     try:
 
         c = credshed.CredShed()
-        query = req_json.get('query', '').strip()
+        query = request.form.get('query', '').strip()
         log.info(f'Count query for "{query}" by {get_jwt_identity()} from {request.remote_addr}')
         count = c.count(query)
         return jsonify({'count': count})
@@ -201,13 +190,8 @@ def export_csv(query):
 @api.route('/auth', methods=['POST'])
 def _auth():
 
-    if request.json:
-        req_json = request.json
-    else:
-        req_json = {}
-
-    username = req_json.get('username', 'UNKNOWN')
-    password = req_json.get('password', 'UNSPECIFIED')
+    username = request.form.get('username', 'UNKNOWN')
+    password = request.form.get('password', 'UNSPECIFIED')
 
     if auth.user_lookup(username, password) == True:
         # Create the tokens we will be sending back to the user
