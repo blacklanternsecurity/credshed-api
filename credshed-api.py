@@ -7,6 +7,7 @@ import argparse
 from lib import app
 from lib import auth
 from sys import stderr
+from lib.credshed import logger
 
 
 log = logging.getLogger('credshed.api')
@@ -34,6 +35,8 @@ if __name__ == '__main__':
         else:
             logging.getLogger('credshed').setLevel(logging.INFO)
 
+        logger.listener.start()
+
         if options.create_default_user:
             default_username, default_password = auth.create_default_user()
             stderr.write('[+] Created default user:\n')
@@ -57,3 +60,9 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         log.error('Interrupted')
         exit(1)
+
+    finally:
+        try:
+            logger.listener.stop()
+        except:
+            pass
