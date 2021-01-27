@@ -24,12 +24,16 @@ from flask_jwt_extended import (
     get_jwt_identity, set_access_cookies,
     set_refresh_cookies, unset_jwt_cookies
 )
-from flask import Flask, request, jsonify, escape, Response, stream_with_context
+from flask import Flask, request, jsonify, escape, Response, stream_with_context, render_template
+from flask_cors import CORS
 
 
 
 # create the application object
 api = Flask('credshed-api')
+
+# handle CORS
+CORS(api, supports_credentials=True)
 
 # register reporting routes
 api.register_blueprint(reporting.routes.api, url_prefix='/reports')
@@ -42,8 +46,8 @@ api.config['JWT_SECRET_KEY'] = api.secret_key
 api.config['JWT_TOKEN_LOCATION'] = ['cookies', 'headers']
 api.config['JWT_ACCESS_COOKIE_PATH'] = '/api/'
 api.config['JWT_COOKIE_CSRF_PROTECT'] = False
-# expires after 1 week
-api.config['JWT_ACCESS_TOKEN_EXPIRES'] = 604800
+# expires after 1 month
+api.config['JWT_ACCESS_TOKEN_EXPIRES'] = 2592000
 
 jwt = JWTManager(api)
 
@@ -64,10 +68,9 @@ def search():
     limit = 1000
 
     try:
-        query = request.form.get('query', '').strip()
+        query = request.json.get('query', '').strip()
         log.info(f'Search query "{query}" by {get_jwt_identity()} from {request.remote_addr}')
         response = jsonify(credshed_search(query, limit=limit))
-        response.set_cookie('last_credshed_search', escape(query))
         return response
 
     except credshed.errors.CredShedError as e:
@@ -78,16 +81,16 @@ def search():
 
 
 
-@api.route('/search_stats', methods=['POST'])
+@api.route('/search_stats/<query>', methods=['GET'])
 @jwt_required
-def search_stats():
+def search_stats(query):
     '''
     given "query" parameter, returns accounts
     '''
 
     try:
-        query = request.form.get('query', '').strip()
-        limit = min(1000, int(request.form.get('limit', 10)))
+        query = query.strip()
+        limit = min(1000, int(request.form.get('limit', 100)))
         log.info(f'Search stats query "{query}" by {get_jwt_identity()} from {request.remote_addr}')
         response = jsonify(reporting.json.SearchStatsReport(query, limit=limit))
         return response
@@ -143,24 +146,6 @@ def count():
 
 
 
-@api.route('/metadata/<account_id>', methods=['POST'])
-@jwt_required
-def metadata(account_id):
-    '''
-    given account ID, returns associated metadata
-    '''
-
-    account_id = unquote_plus(account_id)
-
-    log.info(f'Metadata query for "{account_id}" by {get_jwt_identity()} from {request.remote_addr}')
-    c = credshed.CredShed()
-    account_metadata = c.db.fetch_account_metadata(account_id)
-    sources = list(account_metadata)
-    return jsonify({int(s.id): escape(str(s)) for s in sources})
-
-
-
-
 @api.route('/export_csv/<query>', methods=['GET'])
 @jwt_required
 def export_csv(query):
@@ -190,16 +175,24 @@ def export_csv(query):
 @api.route('/auth', methods=['POST'])
 def _auth():
 
-    username = request.form.get('username', 'UNKNOWN')
-    password = request.form.get('password', 'UNSPECIFIED')
+    username = request.json.get('username', 'UNKNOWN')
+    password = request.json.get('password', 'UNSPECIFIED')
+
+    bad_chars = ['(', ')', '&', '|', '<', '>']
+    for c in bad_chars:
+        username = username.replace(c, '')
 
     if auth.user_lookup(username, password) == True:
-        # Create the tokens we will be sending back to the user
+        
         access_token = create_access_token(identity=username)
 
-        # Set the JWT cookies in the response
-        resp = jsonify({'login': True})
-        set_access_cookies(resp, access_token)
+        resp = jsonify({'login': True, 'access_token': access_token})
+
+        # Set the JWT cookie in the response
+        #set_access_cookies(resp, access_token)
+        with api.app_context():
+            #access_token = create_access_token(identity=username, expires_delta=False)
+            resp.set_cookie('access_token_cookie', access_token)
         log.warning(f'Login attempt by {username} from {request.remote_addr} SUCCESSFUL')
         return resp, 200
 

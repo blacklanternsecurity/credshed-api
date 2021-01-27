@@ -1,0 +1,31 @@
+version: '3.7'
+
+services:
+
+  nginx:
+    image: nginx
+    volumes:
+      - ./deploy:/opt/credshed/deploy
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/credshed.conf
+      - ./lib/credshed-gui/dist:/opt/credshed/credshed-gui
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: ./deploy/Dockerfile.api
+    working_dir: /opt/credshed-api/
+    command: uwsgi --socket 0.0.0.0:8000 --plugin-dir=/usr/lib/uwsgi --plugin python3 -w credshed-api:api --processes=4 --master --vacuum
+    volumes:
+      - .:/opt/credshed-api
+      - /var/log/credshed:/var/log/credshed
+    expose:
+      - 8000
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    restart: unless-stopped

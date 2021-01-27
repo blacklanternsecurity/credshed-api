@@ -4,9 +4,9 @@
 
 import logging
 import argparse
-from lib import app
 from lib import auth
 from sys import stderr
+from lib.app import api
 from lib.credshed import logger
 
 

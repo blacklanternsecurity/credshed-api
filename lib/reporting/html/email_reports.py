@@ -10,8 +10,13 @@ from ...credshed import config
 from .. import json as json_reports
 
 # other
+import logging
 from datetime import datetime
 from flask import render_template, Markup
+
+
+# set up logging
+log = logging.getLogger('credshed.api.reporting.email')
 
 
 class EmailReport(html_reports.HTMLReport):

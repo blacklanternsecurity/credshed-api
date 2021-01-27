@@ -24,6 +24,7 @@ def credshed_search(query, limit=0):
     accounts = []
 
     num_accounts_in_db = cred_shed.db.account_count()
+    num_sources_in_db = cred_shed.db.source_count()
 
     query_type = validation.validate_query_type(query)
 
@@ -31,18 +32,42 @@ def credshed_search(query, limit=0):
     start_time = datetime.now()
 
     for account in cred_shed.search(query, query_type=query_type, limit=limit):
-        accounts.append({k: escape(v) for k,v in account.json.items()})
+
+        num_results += len(getattr(account, 'sources', []))
+
+        account_dict = account.json
+        hashes = account_dict.pop('h', [])
+        source_ids = account_dict.pop('s', [])
+
+        # sanitize the rest        
+        #account_dict = {k: escape(v) for k,v in account_dict.items()}
+
+        # sanitize hashes
+        #account_dict['h'] = [escape(h) for h in hashes]
+        account_dict['h'] = list(hashes)
+
+        # sanitize source IDs
+        account_dict['s'] = []
+        for source_id in source_ids:
+            try:
+                account_dict['s'].append(int(source_id))
+            except ValueError:
+                continue
+        
+        accounts.append(account_dict)
 
     end_time = datetime.now()
     time_elapsed = (end_time - start_time)
 
     json_response = {
         'stats': {
-            'limit': f'{limit:,}',
+            'limit': limit,
             'query': escape(query),
             'query_type': query_type,
-            'count': f'{len(accounts):,}',
-            'searched': f'{num_accounts_in_db:,}',
+            'unique_count': len(accounts),
+            'total_count': num_results,
+            'accounts_searched': num_accounts_in_db,
+            'sources_searched': num_sources_in_db,
             'elapsed': f'{time_elapsed.total_seconds():.2f}',
         },
         'accounts': accounts

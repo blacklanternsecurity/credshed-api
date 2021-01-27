@@ -1,7 +1,13 @@
+import logging
 from ... import util
+from pathlib import Path
 from ...credshed import *
 from datetime import datetime, timedelta
 from flask_jwt_extended import get_jwt_identity
+
+
+# set up logging
+log = logging.getLogger('credshed.api.reporting.json')
 
 
 class JSONReport(dict):
@@ -78,9 +84,14 @@ class SourceReport(JSONReport):
 
     def _query(self, source_id):
 
-        return self._credshed.db.sources.find_one({
-            '_id': source_id
+        source = self._credshed.db.sources.find_one({
+            'source_id': source_id
         })
+
+        if config['FILESTORE']['store_dir'] and source['name']:
+            source['name'] = str(Path(source['name']).relative_to(config['FILESTORE']['store_dir']))
+
+        return source
 
 
 
@@ -118,7 +129,7 @@ class SourcesReport(JSONReport):
 
 class SearchStatsReport(JSONReport):
 
-    def _query(self, query, limit=10):
+    def _query(self, query, limit=100):
 
         sources = self._credshed.query_stats(query, limit=limit)
         resolved_sources = dict()

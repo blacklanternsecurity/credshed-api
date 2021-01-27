@@ -1,0 +1,8 @@
+# TOML format (https://github.com/toml-lang/toml)
+
+[ldap]
+server = ''
+domain = 'corp.local'
+port = 636
+tls = true
+base = 'dc=corp,dc=local'

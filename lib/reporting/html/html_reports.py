@@ -1,6 +1,9 @@
+import logging
 from flask import render_template
 from .. import json as json_reports
 
+# set up logging
+log = logging.getLogger('credshed.api.reporting.html')
 
 
 class HTMLReport:

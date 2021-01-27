@@ -1,2 +1,5 @@
+toml
+ldap3
 Flask
+Flask-CORS
 Flask-JWT-Extended

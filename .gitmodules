@@ -1,4 +1,9 @@
 [submodule "lib/credshed"]
-	path = lib/credshed
-	url = https://github.com/blacklanternsecurity/credshed
-	branch = credshed-v2
+    path = lib/credshed
+    url = https://github.com/blacklanternsecurity/credshed
+    branch = credshed-v2
+
+[submodule "lib/api"]
+    path = lib/credshed-gui
+    url = https://github.com/blacklanternsecurity/credshed-gui
+    branch = master
