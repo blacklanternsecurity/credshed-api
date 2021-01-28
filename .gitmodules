@@ -1,7 +1,7 @@
 [submodule "lib/credshed"]
     path = lib/credshed
     url = https://github.com/blacklanternsecurity/credshed
-    branch = credshed-v2
+    branch = mongo-sharded-v2
 
 [submodule "lib/api"]
     path = lib/credshed-gui
