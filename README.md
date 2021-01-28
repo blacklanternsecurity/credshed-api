@@ -13,8 +13,17 @@ $ git clone --recursive https://github.com/blacklanternsecurity/credshed-api && 
 * (Optional) Build the Vue.js frontend
 ~~~
 $ cd lib/credshed-gui
+
+# install node.js
 $ apt install npm
+
+# install dependencies
 $ npm install
+
+# test, if you want
+$ npm run serve
+
+# build for production
 $ npm run build
 ~~~
 
